@@ -375,7 +375,7 @@
                     throw new Error(data.msg || 'Could not find video stream.');
                 }
 
-                const videoUrl = data.data.play;
+                const videoUrl = data.data.hdplay || data.data.play;
                 const videoResponse = await fetch(videoUrl);
                 if (!videoResponse.ok) throw new Error('Failed to fetch the video file.');
                 
