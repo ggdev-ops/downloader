@@ -286,8 +286,9 @@
             const urlInput = document.getElementById('urlInput');
             const url = urlInput.value.trim();
 
-            if (!url || !url.includes('tiktok.com') || !url.includes('/video/')) {
-                alert('Please paste a valid TikTok video URL');
+            const tiktokRegex = /https?:\/\/(?:[a-zA-Z0-9-]+\.)?tiktok\.com\/./i;
+            if (!url || !tiktokRegex.test(url)) {
+                alert('Please paste a valid TikTok video URL (e.g., tiktok.com/@user/video/... or vt.tiktok.com/...)');
                 return;
             }
 
@@ -313,24 +314,23 @@
             }
         }
 
-        // TikTok video info API (public endpoints)
+        // TikTok video info API (using tikwm to avoid CORS issues)
         async function getVideoInfo(url) {
             try {
-                const match = url.match(/\/video\/(\d+)/);
-                if (!match) throw new Error('Invalid TikTok URL');
-                const videoId = match[1];
-
-                const apiUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+                const apiUrl = `https://tikwm.com/api/?url=${encodeURIComponent(url)}`;
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error('Failed to fetch video info');
                 
                 const data = await response.json();
+                if (data.code !== 0 || !data.data) {
+                    throw new Error(data.msg || 'Could not find video details');
+                }
                 
                 return {
-                    id: videoId,
-                    title: data.title || 'TikTok Video',
-                    author: data.author_name || 'Unknown',
-                    thumbnail: data.thumbnail_url || '',
+                    id: data.data.id || 'Unknown',
+                    title: data.data.title || 'TikTok Video',
+                    author: (data.data.author && (data.data.author.nickname || data.data.author.unique_id)) || 'Unknown',
+                    thumbnail: data.data.cover || '',
                     url: url
                 };
             } catch (error) {
