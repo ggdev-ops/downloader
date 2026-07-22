@@ -314,11 +314,16 @@
             }
         }
 
-        // TikTok video info API (using tikwm to avoid CORS issues)
+        // TikTok video info API (using tikwm to avoid CORS issues and requesting HD)
         async function getVideoInfo(url) {
             try {
-                const apiUrl = `https://tikwm.com/api/?url=${encodeURIComponent(url)}`;
-                const response = await fetch(apiUrl);
+                const response = await fetch('https://www.tikwm.com/api/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `url=${encodeURIComponent(url)}&hd=1`
+                });
                 if (!response.ok) throw new Error('Failed to fetch video info');
                 
                 const data = await response.json();
@@ -352,7 +357,7 @@
                     <div class="author">@${escapeHtml(video.author)}</div>
                     <div class="stats">Video ID: ${video.id}</div>
                 </div>
-                <button class="download-btn">⬇️ Download</button>
+                <button class="download-btn">⬇️ Download HD</button>
             `;
             
             card.querySelector('.download-btn').addEventListener('click', () => downloadVideo(video.url, card.querySelector('.download-btn')));
@@ -366,12 +371,17 @@
                 button.disabled = true;
                 button.innerHTML = '<div class="spinner" style="width:16px; height:16px; border-width:2px; margin: 0 auto;"></div>';
 
-                const apiUrl = `https://tikwm.com/api/?url=${encodeURIComponent(url)}`;
-                const response = await fetch(apiUrl);
+                const response = await fetch('https://www.tikwm.com/api/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `url=${encodeURIComponent(url)}&hd=1`
+                });
                 if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
                 
                 const data = await response.json();
-                if (data.code !== 0 || !data.data || !data.data.play) {
+                if (data.code !== 0 || !data.data || (!data.data.play && !data.data.hdplay)) {
                     throw new Error(data.msg || 'Could not find video stream.');
                 }
 
