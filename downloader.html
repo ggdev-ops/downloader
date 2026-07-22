@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Downloader - No Server</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #16213e;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 650px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: #aaa;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 14px;
+            border: 2px solid #2a3a5e;
+            border-radius: 10px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea::placeholder {
+            color: #6a8ab0;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        .hint {
+            color: #6a8ab0;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+            background: #e94560;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #2a3a5e;
+            margin-top: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: #3a4a6e;
+            box-shadow: none;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+
+        .video-card {
+            background: #0f3460;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .video-card img {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .video-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .video-info .title {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .video-info .author {
+            color: #aaa;
+            font-size: 13px;
+        }
+
+        .video-info .stats {
+            color: #6a8ab0;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .download-btn {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .download-btn:hover {
+            background: #ff6b81;
+        }
+
+        .loading {
+            color: #aaa;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #2a3a5e;
+            border-top-color: #e94560;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            color: #ff6b6b;
+            background: #1a2a4e;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        .url-count {
+            color: #6a8ab0;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .video-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            .video-card img {
+                width: 100%;
+                height: auto;
+                max-height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 TikTok Downloader</h1>
+        <p class="subtitle">Paste video URLs - works in browser, no server needed!</p>
+
+        <textarea id="urlInput" placeholder="Paste TikTok URLs here, one per line...&#10;https://www.tiktok.com/@user/video/1234567890&#10;https://www.tiktok.com/@user/video/0987654321"></textarea>
+        <div class="url-count" id="urlCount">0 URLs detected</div>
+        <div class="hint">💡 Uses public TikTok API - no installation required</div>
+
+        <button class="btn" id="downloadBtn" onclick="fetchVideos()">🔍 Get Videos</button>
+        <button class="btn btn-secondary" onclick="clearAll()">🗑️ Clear All</button>
+
+        <div id="resultContainer" class="result"></div>
+    </div>
+
+    <script>
+        // TikTok video info API (public endpoints)
+        async function getVideoInfo(url) {
+            try {
+                // Extract video ID from URL
+                const match = url.match(/\/video\/(\d+)/);
+                if (!match) throw new Error('Invalid TikTok URL');
+                const videoId = match[1];
+
+                // Use public TikTok API endpoint
+                const apiUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('Failed to fetch video info');
+                
+                const data = await response.json();
+                
+                return {
+                    id: videoId,
+                    title: data.title || 'TikTok Video',
+                    author: data.author_name || 'Unknown',
+                    thumbnail: data.thumbnail_url || '',
+                    url: url
+                };
+            } catch (error) {
+                console.error('Error fetching video:', error);
+                return null;
+            }
+        }
+
+        async function fetchVideos() {
+            const input = document.getElementById('urlInput');
+            const urls = input.value
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line && line.includes('tiktok.com') && line.includes('/video/'));
+
+            if (urls.length === 0) {
+                alert('Please paste at least one valid TikTok video URL');
+                return;
+            }
+
+            const container = document.getElementById('resultContainer');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div> Fetching videos...</div>';
+
+            const btn = document.getElementById('downloadBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Fetching...';
+
+            try {
+                const videoPromises = urls.map(url => getVideoInfo(url));
+                const videos = await Promise.all(videoPromises);
+                const validVideos = videos.filter(v => v !== null);
+
+                if (validVideos.length === 0) {
+                    container.innerHTML = '<div class="error">❌ No valid TikTok videos found. Check your URLs.</div>';
+                    return;
+                }
+
+                displayVideos(validVideos);
+
+            } catch (error) {
+                container.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 Get Videos';
+            }
+        }
+
+        function displayVideos(videos) {
+            const container = document.getElementById('resultContainer');
+            
+            let html = '';
+            
+            videos.forEach((video, index) => {
+                // Generate a download URL using a free TikTok downloader API
+                const downloadUrl = `https://tikwm.com/api/?url=${encodeURIComponent(video.url)}`;
+                
+                html += `
+                    <div class="video-card">
+                        ${video.thumbnail ? `<img src="${video.thumbnail}" alt="Thumbnail" onerror="this.style.display='none'">` : ''}
+                        <div class="video-info">
+                            <div class="title">${escapeHtml(video.title)}</div>
+                            <div class="author">@${escapeHtml(video.author)}</div>
+                            <div class="stats">Video ID: ${video.id}</div>
+                        </div>
+                        <button class="download-btn" onclick="downloadVideo('${video.url}', ${index})">
+                            ⬇️ Download
+                        </button>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        async function downloadVideo(url, index) {
+            const card = document.querySelectorAll('.video-card')[index];
+            const button = card.querySelector('.download-btn');
+            const originalText = button.innerHTML;
+
+            try {
+                button.disabled = true;
+                button.innerHTML = '<div class="spinner" style="width:16px; height:16px; border-width:2px; margin: 0 auto;"></div>';
+
+                // Use a free download API service that returns JSON
+                const apiUrl = `https://tikwm.com/api/?url=${encodeURIComponent(url)}`;
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+                
+                const data = await response.json();
+
+                if (data.code !== 0 || !data.data || !data.data.play) {
+                    throw new Error(data.msg || 'Could not find video stream.');
+                }
+
+                // The actual video URL
+                const videoUrl = data.data.play;
+                
+                // Fetch the video as a blob
+                const videoResponse = await fetch(videoUrl);
+                if (!videoResponse.ok) {
+                    throw new Error('Failed to fetch the video file.');
+                }
+                const videoBlob = await videoResponse.blob();
+                const blobUrl = URL.createObjectURL(videoBlob);
+
+                // Create a temporary link to trigger the download
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                // Suggest a filename, e.g., video_id.mp4
+                a.download = `${data.data.id || 'tiktok_video'}.mp4`; 
+                
+                document.body.appendChild(a);
+                a.click();
+                
+                // Clean up
+                URL.revokeObjectURL(blobUrl);
+                document.body.removeChild(a);
+
+            } catch (error) {
+                console.error('Download error:', error);
+                alert(`Failed to download video: ${error.message}`);
+            } finally {
+                // Restore button state
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function clearAll() {
+            document.getElementById('urlInput').value = '';
+            document.getElementById('resultContainer').innerHTML = '';
+            document.getElementById('urlCount').textContent = '0 URLs detected';
+        }
+
+        // Update URL count
+        document.getElementById('urlInput').addEventListener('input', function() {
+            const urls = this.value
+                .split('\n')
+                .filter(line => line.trim() && line.includes('tiktok.com') && line.includes('/video/'));
+            document.getElementById('urlCount').textContent = `${urls.length} URLs detected`;
+        });
+
+        // Auto-detect on paste
+        document.getElementById('urlInput').addEventListener('paste', function() {
+            setTimeout(() => {
+                const urls = this.value
+                    .split('\n')
+                    .filter(line => line.trim() && line.includes('tiktok.com') && line.includes('/video/'));
+                document.getElementById('urlCount').textContent = `${urls.length} URLs detected`;
+            }, 100);
+        });
+    </script>
+</body>
+</html>
